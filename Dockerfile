@@ -1,3 +1,4 @@
+
 # Build stage
 FROM maven:3.9.9-eclipse-temurin-21 AS build
 
@@ -8,13 +9,16 @@ COPY src ./src
 
 RUN mvn clean package -DskipTests
 
-# Run stage
-FROM eclipse-temurin:21-jdk
+# Runtime stage - Tomcat 11
+FROM tomcat:11.0-jdk21-temurin
 
-WORKDIR /app
+# Remove default applications
+RUN rm -rf /usr/local/tomcat/webapps/*
 
-COPY --from=build /app/target/*.jar app.jar
+# Deploy Spring MVC application
+COPY --from=build /app/target/Community.war \
+    /usr/local/tomcat/webapps/ROOT.war
 
 EXPOSE 8080
 
-CMD ["java", "-jar", "app.jar"]
+CMD ["catalina.sh", "run"]
